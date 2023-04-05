@@ -1,0 +1,38 @@
+{
+  "name": "mnemosyne",
+  "version": "1.0.0",
+  "description": "NoSQL-backed messaging forums.",
+  "main": "index.js",
+  "repository": "https://github.com/viztheman/mnemosyne.git",
+  "author": "Daniel Hammond",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@tsconfig/node18": "^1.0.1",
+    "@types/express": "^4.17.17",
+    "@types/uuid": "^9.0.1",
+    "@types/validator": "^13.7.14",
+    "concurrently": "^8.0.1",
+    "nodemon": "^2.0.22",
+    "typescript": "^5.0.3"
+  },
+  "types": "./types/index.d.ts",
+  "scripts": {
+    "build": "npx tsc",
+    "buildwatch": "npx tsc --watch",
+    "dev": "concurrently --kill-others \"npm:buildwatch\" \"npm:devserver\"",
+    "devserver": "nodemon ./dist/index.js"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.2",
+    "@types/mongoose-auto-increment": "^5.0.35",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "helmet": "^6.0.1",
+    "mongoose": "^7.0.3",
+    "mongoose-auto-increment": "^5.0.1",
+    "uuid": "^9.0.0",
+    "validator": "^13.9.0"
+  }
+}
