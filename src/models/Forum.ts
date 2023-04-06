@@ -1,4 +1,6 @@
-import {Schema, model} from 'mongoose';
+const PAGE_SIZE = 40;
+
+import {Document, Schema, model} from 'mongoose';
 
 interface IForumCounter {
 	_id: string;
@@ -25,8 +27,9 @@ const schema = new Schema<IForum>({
 	order: {type: Number, required: true, min: 1}
 }, {
 	_id: false,
-	timestamps: true
+	timestamps: true,
 });
+schema.index({category: 1, order: 1});
 
 schema.virtual('subforums', {
 	ref: 'Subforum',
@@ -39,7 +42,8 @@ schema.virtual('threads', {
 	ref: 'Thread',
 	localField: '_id',
 	foreignField: 'parent',
-	match: {parentType: 'Forum'}
+	match: {parentType: 'Forum'},
+	options: {sort: 'updatedAt'}
 });
 
 schema.pre('save', async function(next) {

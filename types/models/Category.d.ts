@@ -45,10 +45,10 @@
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose" />
 /// <reference types="mongoose-auto-increment/node_modules/mongoose/types/inferschematype" />
 /// <reference types="mongoose/types/inferschematype" />
-interface ICategory {
+import { Document } from 'mongoose';
+interface ICategory extends Document {
     _id?: number;
     title: string;
     order: number;

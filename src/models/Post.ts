@@ -1,5 +1,15 @@
-import {Schema, model} from 'mongoose';
-import autoIncrement from 'mongoose-auto-increment';
+import {Document, Schema, model} from 'mongoose';
+
+interface IPostCounter {
+	_id: string;
+	seq: number;
+}
+
+const counterSchema = new Schema<IPostCounter>({
+	_id: {type: String, required: true},
+	seq: {type: Number, default: 1}
+});
+const PostCounter = model<IPostCounter>('PostCounter', counterSchema);
 
 interface IPost {
 	_id?: number;
@@ -21,7 +31,24 @@ const schema = new Schema<IPost>({
 	_id: false,
 	timestamps: true
 });
-schema.plugin(autoIncrement.plugin, 'Post');
+schema.index({thread: 1, createdAt: 1});
+
+schema.pre('save', async function(next) {
+	try {
+		let counter = await PostCounter.findByIdAndUpdate(
+			{_id: 'entityId'},
+			{$inc: {seq: 1}},
+			{new: true, upsert: true}
+		);
+
+		this._id = counter.seq;
+		next();
+	}
+	catch (err: any) {
+		console.error(err);
+		next(err);
+	}
+});
 
 const Post = model<IPost>('Post', schema);
 export default Post;

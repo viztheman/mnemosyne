@@ -1,7 +1,7 @@
 const BCRYPT = /^\$2[ayb]\$.{56}$/;
 
 import crypto from 'crypto';
-import mongoose, {Schema, model} from 'mongoose';
+import {Document, Schema, model} from 'mongoose';
 import validator from 'validator';
 
 declare module 'express' {
@@ -30,17 +30,13 @@ interface IUser {
 	apiKey: string;
 }
 
-function createApiKey(): string {
-	return crypto.randomBytes(32).toString('hex');
-}
-
 const schema = new Schema<IUser>({
 	_id: Number,
 	username: {type: String, required: true, maxlength: 25, unique: true},
 	email: {type: String, required: true, validate: validator.isEmail, unique: true},
 	passwordHash: {type: String, required: true, match: BCRYPT},
 	isAdmin: {type: Boolean, required: true, default: false},
-	apiKey: {type: String, required: true, default: createApiKey}
+	apiKey: {type: String, required: true, unique: true, default: () => crypto.randomBytes(32).toString('hex')}
 }, {
 	_id: false,
 	timestamps: true

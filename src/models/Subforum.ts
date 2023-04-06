@@ -1,4 +1,4 @@
-import {Schema, model} from 'mongoose';
+import {Document, Schema, model} from 'mongoose';
 
 interface ISubforumCounter {
 	_id: string;
@@ -27,6 +27,7 @@ const schema = new Schema<ISubforum>({
 	_id: false,
 	timestamps: true,
 });
+schema.index({forum: 1, order: 1});
 
 schema.virtual('threads', {
 	ref: 'Thread',

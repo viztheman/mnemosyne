@@ -1,4 +1,4 @@
-import {Schema, model} from 'mongoose';
+import {Document, Schema, model} from 'mongoose';
 
 interface ICategoryCounter {
 	_id: string;
@@ -11,7 +11,7 @@ const counterSchema = new Schema<ICategoryCounter>({
 });
 const CategoryCounter = model<ICategoryCounter>('CategoryCounter', counterSchema);
 
-interface ICategory {
+interface ICategory extends Document {
 	_id?: number;
 	title: string;
 	order: number;
