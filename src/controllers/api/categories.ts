@@ -1,120 +1,86 @@
-const BAD_ID = 'Invalid ID.';
-const NOT_FOUND = 'Category not found.';
-const ALL_REQUIRED = 'Title and Order fields are required.';
-const SOME_REQUIRED = 'Title or Order field is required.';
-const INVALID = 'One or more fields are invalid.';
-const SERVER_ERROR = 'Server error.'
-
 import {Router, json} from 'express';
 import apiKey from '../../middleware/api-key';
 import isAdmin from '../../middleware/is-admin';
-import Category from '../../models/Category';
+import categoriesSvc from '../../services/categories';
+import Error, { ALL_REQUIRED, BAD_ID, IError, SOME_REQUIRED } from '../../services/errors';
 
 const router = Router();
 
 router.get('/', apiKey(), async (req, res) => {
-    try {
-        const categories = await Category.find().lean();
-        res.json({categories});
+    const categories = await categoriesSvc.all();
+
+    if (categories instanceof Error) {
+        const err = categories as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+
+    res.json({categories});
 });
 
 router.get('/:_id', apiKey(), async (req, res) => {
-    try {
-        const _id = parseInt(req.params._id);
-        if (!_id)
-            res.status(400).json({error: BAD_ID});
-        
-        const category = await Category.findOne({_id}).lean();
-        if (!category)
-            res.status(404).json({error: NOT_FOUND});
+    const _id = parseInt(req.params._id);
+    if (!_id)
+        res.status(400).json({error: BAD_ID});
 
-        res.json(category);
+    const category = await categoriesSvc.one(_id);
+
+    if (category instanceof Error) {
+        const err = category as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+
+    res.json({category});
 });
 
 router.post('/', apiKey(), isAdmin(), json(), async (req, res) => {
-    try {
-        const {title} = req.body;
-        const order = parseInt(req.body.order);
+    const {title} = req.body;
+    const order = parseInt(req.body.order);
 
-        if (!title || !order)
-            return res.status(400).json({error: ALL_REQUIRED});
+    if (!title || !order)
+        return res.status(400).json({error: ALL_REQUIRED});
         
-        try {
-            const category = new Category({title, order});
-            await category.save();
+    const category = await categoriesSvc.create({title, order});
 
-            res.json(category);
-        }
-        catch (err) {
-            console.error(err);
-            return res.status(400).json({error: INVALID});
-        }
+    if (category instanceof Error) {
+        const err = category as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+
+    res.json(category);
 });
 
 router.put('/:_id', apiKey(), isAdmin(), json(), async (req, res) => {
-    try {
-        const _id = parseInt(req.params._id);
-        if (!_id)
-            return res.status(404).json({error: BAD_ID});
+    const _id = parseInt(req.params._id);
+    if (!_id)
+        return res.status(404).json({error: BAD_ID});
+    
+    const {title} = req.body;
+    const order = parseInt(req.body.order);
 
-        const {title} = req.body;
-        const order = parseInt(req.body.order);
+    if (!title && !order)
+        return res.status(400).json({error: SOME_REQUIRED});
 
-        if (!title && !order)
-            return res.status(400).json({error: SOME_REQUIRED});
-        
-        const category = await Category.findOne({_id});
-        if (!category)
-            return res.status(404).json({error: NOT_FOUND});
-
-        if (title) category.title = title;
-        if (order) category.order = order;
-        try {
-            await category.save();
-            res.json(category);
-        }
-        catch (err) {
-            console.error(err);
-            res.status(400).json({error: INVALID});
-        }
+    const category = await categoriesSvc.update({_id, title, order});
+    if (category instanceof Error) {
+        const err = category as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+
+        res.json(category);
 });
 
 router.delete('/:_id', apiKey(), isAdmin(), async (req, res) => {
-    try {
-        const _id = parseInt(req.params._id);
-        if (!_id)
-            return res.status(404).json({error: BAD_ID});
+    const _id = parseInt(req.params._id);
+    if (!_id)
+        return res.status(404).json({error: BAD_ID});
 
-        const result = await Category.findOneAndDelete({_id});
-        if (!result)
-            return res.status(404).json({error: NOT_FOUND});
+    const category = await categoriesSvc.del(_id);
+    if (category instanceof Error) {
+        const err = category as IError;
+        return res.status(err.statusCode).json({err: err.message});
+    }
 
-        res.status(204).end();
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+    res.status(204).end();
 });
 
 export default router;

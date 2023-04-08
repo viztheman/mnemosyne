@@ -1,6 +1,6 @@
 const PAGE_SIZE = 40;
 
-import {Document, Schema, model, Query, QueryWithHelpers, Model} from 'mongoose';
+import {Schema, model} from 'mongoose';
 
 interface IThreadCounterDocument {
 	_id: string;

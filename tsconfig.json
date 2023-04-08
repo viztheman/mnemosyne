@@ -8,5 +8,6 @@
 		"outDir": "dist",
 		"declaration": true,
 		"declarationDir": "./types"
-	}
+	},
+	"allowJs": true
 }

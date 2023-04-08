@@ -1,129 +1,94 @@
 const FORUM_REQUIRED = 'Forum ID is required.';
-const BAD_ID = 'Invalid ID.';
-const NOT_FOUND = 'subforum not found.';
-const ALL_REQUIRED = 'Title, Order, and Forum fields are required.';
-const SOME_REQUIRED = 'Title, Order, or Forum field is required.';
-const INVALID = 'One or more fields are invalid.';
-const SERVER_ERROR = 'Server error.';
 
 import {Router, json} from 'express';
 import apiKey from '../../middleware/api-key';
 import isAdmin from '../../middleware/is-admin';
-import Subforum from '../../models/Subforum';
+import Error, { ALL_REQUIRED, BAD_ID, IError, NOT_FOUND, SERVER_ERROR, SOME_REQUIRED } from '../../services/errors';
+import subforumsSvc from '../../services/subforums';
 
 const router = Router();
 
 router.get('/', apiKey(), async (req, res) => {
-    try {
-        const {f: forum} = req.query;
-        if (!forum)
-            return res.status(400).json({error: FORUM_REQUIRED});
-        
-        const subforums = await Subforum.find({forum}).lean();
-        res.json({subforums});
+    const forum = parseInt(req.query.f as string);
+    if (!forum)
+        return res.status(400).json({error: FORUM_REQUIRED});
+    
+    const subforums = await subforumsSvc.all(forum);
+
+    if (subforums instanceof Error) {
+        const err = subforums as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+
+    res.json({subforums});
 });
 
 router.get('/_id', apiKey(), isAdmin(), json(), async (req, res) => {
-    try {
-        const _id = parseInt(req.params._id);
-        if (!_id)
-            return res.status(400).json({error: BAD_ID});
-        
-        const subforum = await Subforum.findOne({_id}).lean();
-        if (!subforum)
-            return res.status(404).json({error: NOT_FOUND});
-        
-        res.json({subforum});
+    const _id = parseInt(req.params._id);
+    if (!_id)
+        return res.status(400).json({error: BAD_ID});
+    
+    const subforum = await subforumsSvc.one(_id);
+    if (subforum instanceof Error) {
+        const err = subforum as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+    
+    res.json({subforum});
 });
 
 router.post('/', apiKey(), isAdmin(), json(), async (req, res) => {
-    try {
-        const {title} = req.body;
-        const order = parseInt(req.body.order);
-        const forum = parseInt(req.body.forum);
+    const {title} = req.body;
+    const order = parseInt(req.body.order);
+    const forum = parseInt(req.body.forum);
 
-        if (!title || !order || !forum)
-            return res.status(400).json({error: ALL_REQUIRED});
+    if (!title || !order || !forum)
+        return res.status(400).json({error: ALL_REQUIRED});
+    
+    const subforum = await subforumsSvc.create({title, order, forum});
+    if (subforum instanceof Error) {
+        const err = subforum as IError;
+        return res.status(err.statusCode).json({error: err.message});
+    }
         
-        try {
-            const subforum = new Subforum({title, order, forum});
-            await subforum.save();
-
-            res.json(subforum);
-        }
-        catch (err) {
-            console.error(err);
-            return res.status(400).json({error: INVALID});
-        }
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+    res.json(subforum);
 });
 
 router.put('/:_id', apiKey(), isAdmin(), json(), async (req, res) => {
-    try {
-        const _id = parseInt(req.params._id);
-        if (!_id)
-            return res.status(404).json({error: BAD_ID});
+    const _id = parseInt(req.params._id);
+    if (!_id)
+        return res.status(404).json({error: BAD_ID});
 
-        const {title} = req.body;
-        const order = parseInt(req.body.order);
-        const forum = parseInt(req.body.category);
+    const {title} = req.body;
+    const order = parseInt(req.body.order);
+    const forum = parseInt(req.body.category);
 
-        if (!title && !order && !forum)
-            return res.status(400).json({error: SOME_REQUIRED});
-        
-        const subforum = await Subforum.findOne({_id});
-        if (!subforum)
-            return res.status(404).json({error: NOT_FOUND});
+    if (!title && !order && !forum)
+        return res.status(400).json({error: SOME_REQUIRED});
+    
+    const subforum = await subforumsSvc.update({_id, title, order, forum});
 
-        if (title) subforum.title = title;
-        if (order) subforum.order = order;
-        if (forum) subforum.forum = forum;
-
-        try {
-            await subforum.save();
-            res.json(subforum);
-        }
-        catch (err) {
-            console.error(err);
-            res.status(400).json({error: INVALID});
-        }
+    if (subforum instanceof Error) {
+        const err = subforum as IError;
+        return res.status(err.statusCode).json({error: err.message});
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
+
+    res.json(subforum);
 });
 
 router.delete('/:_id', apiKey(), isAdmin(), async (req, res) => {
-    try {
         const _id = parseInt(req.params._id);
         if (!_id)
             return res.status(404).json({error: BAD_ID});
 
-        const result = await Subforum.findOneAndDelete({_id});
-        if (!result)
-            return res.status(404).json({error: NOT_FOUND});
+        const subforum = await subforumsSvc.del(_id);
+
+        if (subforum instanceof Error) {
+            const err = subforum as IError;
+            return res.status(err.statusCode).json({error: err.message});
+        }
 
         res.status(204).end();
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({error: SERVER_ERROR});
-    }
 });
 
 export default router;
